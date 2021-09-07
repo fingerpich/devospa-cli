@@ -12,8 +12,7 @@ const concat = require("concat-stream")
 const cliProgress = require('cli-progress');
 const progressBar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
 
-// const baseURL = "http://devospa.com"
-const baseURL = "http://localhost:3020"
+const baseURL = "http://devospa.com"
 
 program
   .version(package.version, "-v, --version");
