@@ -1,16 +1,19 @@
 #!/usr/bin/env node
 
 const rimraf = require("rimraf");
-var FormData = require('form-data');
-var fs = require('fs');
-var program = require("commander");
-var inquirer = require('inquirer');
-var axios = require('axios');
-var { zip } = require('zip-a-folder');
-var package = require("./package.json");
+const FormData = require('form-data');
+const fs = require('fs');
+const program = require("commander");
+const inquirer = require('inquirer');
+const got = require('got');
+const { zip } = require('zip-a-folder');
+const package = require("./package.json");
 const concat = require("concat-stream")
 const cliProgress = require('cli-progress');
 const progressBar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
+
+// const baseURL = "http://devospa.com"
+const baseURL = "http://localhost:3020"
 
 program
   .version(package.version, "-v, --version");
@@ -25,13 +28,8 @@ program
   })
   .action((token, buildFolder, options, command) => {
     console.log(buildFolder + " folder will be zipped and uploaded to devospa.com")
-    const api = axios.create({
-      maxContentLength: Infinity,
-      maxBodyLength: Infinity,
-      baseURL: "http://devospa.com",
-      // baseURL: "http://localhost:3020",
-    })
-    return api.post("/devospaApi/checkProjectToken", { token }).then(async() => {
+    const url = baseURL+"/devospaApi/checkProjectToken"
+    return got.post(url, { json: { token } }).then(async() => {
       return inquirer.prompt([
         { 
           name: "branch name", 
@@ -43,13 +41,6 @@ program
         progressBar.start(100, 1);
         const zipPath = "./" + branchName + token + '.zip'
         await zip(buildFolder, zipPath);
-        progressBar.update(10);
-        let n = 10
-        const intervalObj = setInterval(() => {
-          const nn = (100 + n) / 2
-          n += Math.min(10, nn - n)
-          progressBar.update(n)
-        }, 500)
         new Promise((resolve) => {
           const fd = new FormData();
           fd.append("token", token);
@@ -57,15 +48,11 @@ program
           fd.append("file", fs.createReadStream(zipPath));
           fd.pipe(concat({ encoding: 'buffer' }, data => resolve({ data, headers: fd.getHeaders() })));
         }).then(({ data, headers }) => {
-          return api.post("/devospaApi/upload", data, {
-            headers,
-            onUploadProgress: progressEvent => {
-              var percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
-              console.log(percentCompleted)
-              progressBar.update(percentCompleted);
-            }
-          }).then((uploadResponse) => {
-            clearInterval(intervalObj)
+          return got.post(baseURL+"/devospaApi/upload", { body: data, headers})
+          .on('uploadProgress', progress => {
+            progressBar.update(Math.round(progress.percent * 100));
+          })
+          .then((uploadResponse) => {
             progressBar.update(100)
             progressBar.stop(100)
             console.log("Upload completed, Please check devospa.com")
@@ -97,6 +84,7 @@ program
         }
       });
     }).catch(e => {
+      console.log(e)
       console.error("the project token is wrong, please copy the command from devospa.com")
     })
   })
