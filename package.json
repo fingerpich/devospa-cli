@@ -1,10 +1,9 @@
 {
   "name": "devospa",
   "version": "1.4.0",
-  "description": "This cli helps you to publish demo of your SPA in devospa easily",
-  "repository": "fingerpich/devospa-cli",
+  "description": "A simple cli to push a demo of developing spa to the devospa.com",
+  "repository": "Devospa/devospa-cli",
   "scripts": {
-    "dev": "node cli.js",
     "build": "tsc --outDir dist src/index.ts"
   },
   "bin": {
@@ -19,9 +18,10 @@
     "inquirer": "^8.1.1",
     "poss": "^3.0.2",
     "rimraf": "^3.0.2",
-    "tsc": "^2.0.3",
-    "typescript": "^4.5.4",
     "zip-a-folder": "^1.0.1"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "tsc": "^2.0.3",
+    "typescript": "^4.5.4"
+  }
 }
